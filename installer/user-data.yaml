@@ -10,6 +10,13 @@ autoinstall:
   ssh:
     allow-pw: true
     install-server: true
+  packages:
+    - htop
+    - vim
+    - curl
+    - wget
+    - net-tools
+    - ufw
   apt:
     preserve_sources_list: false
     primary:
