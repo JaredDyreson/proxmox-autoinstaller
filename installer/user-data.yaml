@@ -1,6 +1,8 @@
 #cloud-config
 autoinstall:
   version: 1
+  interactive-sections: []
+  locale: en_US.UTF-8
   keyboard:
     layout: us
   identity:
@@ -10,13 +12,17 @@ autoinstall:
   ssh:
     allow-pw: true
     install-server: true
-  packages:
-    - htop
-    - vim
-    - curl
-    - wget
-    - net-tools
-    - ufw
+  #packages:
+    #- htop
+    #- vim
+    #- curl
+    #- wget
+    #- net-tools
+    #- ufw
+  late-commands:
+    - cp /cdrom/scripts/bootstrap.sh /target/root/setup.sh
+    - chmod +x /target/root/setup.sh
+    - curtin in-target -- /root/setup.sh
   apt:
     preserve_sources_list: false
     primary:
@@ -37,19 +43,22 @@ autoinstall:
     version: 2
     renderer: networkd
     ethernets:
-      eth0:
+      ens33:
+        match:
+          name: en*
         addresses:
-        - 192.168.1.100/24
+          - 192.168.1.100/24
         nameservers:
           addresses: [192.168.1.1, 8.8.8.8]
         routes:
-        - to: default
-          via: 192.168.1.1
+          - to: default
+            via: 192.168.1.1
   storage:
     config:
       - id: disk0
         type: disk
         ptable: gpt
+        path: /dev/vda
         wipe: superblock-recursive
         grub_device: true
       - id: bios-boot
