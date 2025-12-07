@@ -1,0 +1,63 @@
+---
+- name: Create Proxmox VM
+  hosts: proxmox_host
+  gather_facts: false
+  
+  vars:
+    # Proxmox connection details
+    proxmox_api_host: "{{ proxmox_host }}"
+    proxmox_api_user: "root@pam"
+    proxmox_api_password: "{{ proxmox_password }}"
+    proxmox_node: "{{ proxmox_node_name }}"
+    
+    # VM specifications
+    vm_id: 101
+    vm_name: "my-new-vm"
+    vm_cores: 1
+    vm_memory: 2048  # in MB
+    vm_disk_size: 32  # in GB
+    vm_storage: "local-lvm"
+    vm_network_bridge: "vmbr0"
+    
+    vm_iso: "local:iso/ubuntu-24.04.3-live-server-amd64-auto-installer.iso"
+    
+  tasks:
+    - name: Create new VM
+      community.general.proxmox_kvm:
+        api_host: "{{ proxmox_api_host }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ vm_id }}"
+        name: "{{ vm_name }}"
+        cores: "{{ vm_cores }}"
+        memory: "{{ vm_memory }}"
+        net:
+          net0: "virtio,bridge={{ vm_network_bridge }}"
+        virtio:
+          virtio0: "{{ vm_storage }}:{{ vm_disk_size }}"
+        ide:
+          ide2: "{{ vm_iso }},media=cdrom"
+        ostype: l26  # Linux kernel 2.6+
+        scsihw: virtio-scsi-pci
+        bootdisk: virtio0
+        boot: cdn  # boot order: disk, network, cdrom
+        cpu: host
+        state: present
+        validate_certs: false
+      register: vm_created
+
+    - name: Start the VM
+      community.general.proxmox_kvm:
+        api_host: "{{ proxmox_api_host }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_password: "{{ proxmox_api_password }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ vm_id }}"
+        state: started
+        validate_certs: false
+      when: vm_created.changed
+
+    - name: Display VM information
+      debug:
+        msg: "VM {{ vm_name }} (ID: {{ vm_id }}) has been created and started"

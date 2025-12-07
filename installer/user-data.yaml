@@ -1,0 +1,104 @@
+#cloud-config
+autoinstall:
+  version: 1
+  keyboard:
+    layout: us
+  identity:
+    hostname: ubu-server
+    password: "$6$jwiOb1mqNG/7y3h5$8jpjQzX0Lm0tXf9PFpGooyZ2a0tT8tDBcjABHc1PCOQlXQ04y72gq4ZcR1UMwY8LPzfBk6pM4rHJ798Cx8BY01"
+    username: jared
+  ssh:
+    allow-pw: true
+    install-server: true
+  apt:
+    preserve_sources_list: false
+    primary:
+    - arches: [amd64, i386]
+      uri: http://us.archive.ubuntu.com/ubuntu
+    - arches: [default]
+      uri: http://ports.ubuntu.com/ubuntu-ports
+    fallback: abort
+    geoip: true
+  codecs: 
+    install: true
+  drivers:
+    install: true
+  kernel-crash-dumps: 
+    enabled: false
+  updates: all    
+  network:
+    version: 2
+    renderer: networkd
+    ethernets:
+      eth0:
+        addresses:
+        - 192.168.1.100/24
+        nameservers:
+          addresses: [192.168.1.1, 8.8.8.8]
+        routes:
+        - to: default
+          via: 192.168.1.1
+  storage:
+    config:
+      - id: disk0
+        type: disk
+        ptable: gpt
+        wipe: superblock-recursive
+        grub_device: true
+      - id: bios-boot
+        type: partition
+        size: 1M
+        device: disk0
+        flag: bios_grub
+      - id: disk0-boot-efi
+        type: partition
+        size: 512M
+        device: disk0
+        flag: boot
+      - id: disk0-boot-efi-fs
+        type: format
+        fstype: fat32
+        volume: disk0-boot-efi
+        label: EFI
+      - id: disk0-boot
+        type: partition
+        size: 1G
+        device: disk0
+      - id: disk0-boot-fs
+        type: format
+        fstype: ext4
+        volume: disk0-boot
+        label: boot
+      - id: swap
+        type: partition
+        size: 8G
+        device: disk0
+      - id: swap-fs
+        type: format
+        fstype: swap
+        volume: swap
+      - id: disk0-root
+        type: partition
+        size: -1
+        device: disk0
+      - id: disk0-root-fs
+        type: format
+        fstype: ext4
+        volume: disk0-root
+        label: root
+      - id: mount-efi
+        type: mount
+        device: disk0-boot-efi-fs
+        path: /boot/efi
+      - id: mount-boot
+        type: mount
+        device: disk0-boot-fs
+        path: /boot
+      - id: mount-root
+        type: mount
+        device: disk0-root-fs
+        path: /
+      - id: mount-swap
+        type: mount
+        device: swap-fs
+        path: none
